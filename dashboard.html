@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fc">
+  <title>Drug Dashboard | จัดการคลังยา</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #25334a;
+      --muted: #748197;
+      --line: #e5eaf2;
+      --bg: #f5f7fc;
+      --card: #fff;
+      --blue: #5268e8;
+      --blue-soft: #eef0ff;
+      --cyan: #31b6c8;
+      --orange: #f3a342;
+      --pink: #e76d91;
+      --green: #33a982;
+      --red: #df5c66;
+      --shadow: 0 12px 32px rgba(43, 62, 100, .07);
+      font-family: "Leelawadee UI", Tahoma, sans-serif;
+      font-size: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 360px;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 2% 0%, rgba(116, 132, 255, .13), transparent 28rem),
+        radial-gradient(ellipse at 100% 5%, rgba(68, 208, 197, .11), transparent 24rem),
+        var(--bg);
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1440px, 100%); margin: 0 auto; padding: 28px clamp(14px, 3vw, 42px) 48px; }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      place-items: center;
+      border-radius: 18px;
+      color: #fff;
+      background: linear-gradient(140deg, #6177f4, #39c5bd);
+      box-shadow: 0 10px 24px rgba(82, 104, 232, .24);
+      font-size: 25px;
+      font-weight: 900;
+    }
+    h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.5px; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); }
+    .source-status { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; font-weight: 700; }
+    .source-status.live { color: #17643d; background: #e5f6ec; border: 1px solid #9bd4b2; }
+    .source-status.fallback { color: #805400; background: #fff4cf; border: 1px solid #e6c76c; }
+    .dispense-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0 0 14px; }
+    .dispense-stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .dispense-stat strong { display:block; font-size:24px; }
+    @media(max-width:760px){.dispense-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    .snapshot {
+      border: 1px solid #dfe5ff;
+      border-radius: 999px;
+      padding: 9px 14px;
+      color: #4a5dcc;
+      background: #f0f2ff;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .panel, .kpi {
+      border: 1px solid rgba(226, 232, 242, .95);
+      border-radius: 19px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .kpi { min-height: 132px; padding: 18px 19px; position: relative; overflow: hidden; }
+    .kpi::after {
+      position: absolute;
+      right: -15px;
+      bottom: -28px;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--tint);
+      content: "";
+      opacity: .8;
+    }
+    .kpi-label { color: var(--muted); font-size: 14px; font-weight: 700; }
+    .kpi-value { margin-top: 12px; font-size: clamp(26px, 2.8vw, 36px); font-weight: 900; line-height: 1.05; }
+    .kpi-detail { margin-top: 8px; color: var(--muted); font-size: 13px; }
+    .kpi-blue { --tint: #e8ebff; }
+    .kpi-cyan { --tint: #e0f7f8; }
+    .kpi-orange { --tint: #fff0dc; }
+    .kpi-pink { --tint: #ffe8ee; }
+    .kpi-green { --tint: #e1f7ed; }
+
+    .filter-panel { padding: 16px 18px; margin-bottom: 16px; }
+    .filter-row { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+    .filter-title { margin-right: auto; }
+    .filter-title strong { display: block; font-size: 16px; }
+    .filter-title span { color: var(--muted); font-size: 13px; }
+    .field { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .field input, .field select, .search {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 8px 11px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+    .field input:focus, .field select:focus, .search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(82, 104, 232, .13); }
+    .range-note { width: 100%; color: var(--muted); font-size: 12px; }
+
+    .insight-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; margin-bottom: 18px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .panel-heading h2 { margin: 0; font-size: 18px; }
+    .panel-body { padding: 18px 20px; }
+    .chart-subtitle { margin: 4px 0 15px; color: var(--muted); font-size: 13px; }
+    .bar-row { display: grid; grid-template-columns: minmax(90px, 150px) minmax(60px, 1fr) 58px; align-items: center; gap: 10px; margin: 12px 0; }
+    .bar-label { overflow: hidden; color: #59667b; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { height: 12px; overflow: hidden; border-radius: 999px; background: #edf0f7; }
+    .bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6177f4, #43c6c1); }
+    .bar-value { text-align: right; font-size: 13px; font-weight: 850; }
+    .expiry-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .expiry-chip { border-radius: 14px; padding: 14px; background: #f8f9fd; }
+    .expiry-chip strong { display: block; font-size: 24px; }
+    .expiry-chip span { color: var(--muted); font-size: 12px; }
+    .expiry-chip.expired { color: #bc414b; background: #fff0f1; }
+    .expiry-chip.soon { color: #a86408; background: #fff5e6; }
+    .expiry-chip.quarantine { color: #6554c0; background: #f1efff; }
+
+    .table-panel { overflow: hidden; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .tab {
+      min-height: 40px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      padding: 8px 13px;
+      color: #69758a;
+      background: #f5f7fb;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .tab[aria-selected="true"] { border-color: #dce1ff; color: #4e61d0; background: var(--blue-soft); }
+    .table-tools { display: flex; align-items: center; gap: 10px; padding: 14px 18px; }
+    .search { width: min(420px, 100%); }
+    .table-hint { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .table-scroll { overflow: auto; max-height: 560px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid #edf0f5; text-align: left; vertical-align: middle; }
+    th { position: sticky; top: 0; z-index: 1; color: #778398; background: #f8f9fc; font-size: 12px; white-space: nowrap; }
+    td { font-size: 14px; }
+    tbody tr:hover { background: #fafbff; }
+    .primary-cell { font-weight: 800; }
+    .secondary { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 400; }
+    .badge { display: inline-block; border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .badge-green { color: #19805f; background: #e5f7ef; }
+    .badge-orange { color: #a15e08; background: #fff1dc; }
+    .badge-red { color: #b43e48; background: #ffeaec; }
+    .badge-purple { color: #6552b6; background: #f0edff; }
+    .badge-gray { color: #68758a; background: #eef1f5; }
+    .empty { padding: 40px 18px; color: var(--muted); text-align: center; }
+    .table-status { padding: 12px 18px; color: var(--muted); font-size: 13px; }
+    .notice { margin: 16px 0 0; border: 1px solid #dfe5ff; border-radius: 14px; padding: 13px 15px; color: #59688e; background: #f3f5ff; font-size: 13px; line-height: 1.55; }
+    .error { margin: 16px 0; border: 1px solid #f1c5c6; border-radius: 14px; padding: 15px; color: #aa3039; background: #fff2f2; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 1050px) {
+      .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .insight-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .shell { padding: 18px 12px 32px; }
+      .header { align-items: flex-start; flex-direction: column; }
+      .snapshot { white-space: normal; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .kpi { min-height: 118px; padding: 14px; }
+      .filter-title { width: 100%; }
+      .field { flex: 1 1 135px; }
+      .table-tools { align-items: stretch; flex-direction: column; }
+      .search { width: 100%; }
+      .table-hint { margin-left: 0; }
+      .expiry-summary { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 420px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .kpi-value { font-size: 25px; }
+      .bar-row { grid-template-columns: 82px minmax(40px, 1fr) 42px; gap: 7px; }
+      .panel-body { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">Rx</div>
+        <div>
+          <h1>จัดการคลังยา</h1>
+          <p class="subtitle">สต็อก · วันหมดอายุ · แนะนำสั่งซื้อ · รายการจ่าย</p>
+        </div>
+      </div>
+      <div class="snapshot" id="snapshot-label">กำลังอ่านข้อมูล...</div>
+    </header>
+
+    <div id="source-status" class="source-status" role="status">กำลังตรวจสอบแหล่งข้อมูล...</div>
+    <div id="data-error" role="alert" hidden></div>
+    <section class="kpi-grid" id="kpi-grid" aria-label="ตัวชี้วัดคลังยา"></section>
+
+    <section class="panel filter-panel" aria-label="กรองช่วงเวลารายการจ่ายยา">
+      <div class="filter-row">
+        <div class="filter-title">
+          <strong>ช่วงเวลารายการจ่ายยา</strong>
+          <span>เปลี่ยนช่วงวันที่เพื่ออัปเดตยอดจ่ายและกราฟ</span>
+        </div>
+        <label class="field">ตั้งแต่วันที่<input id="date-from" type="date"></label>
+        <label class="field">ถึงวันที่<input id="date-to" type="date"></label>
+        <div class="range-note" id="period-label"></div>
+      </div>
+    </section>
+
+    <section class="insight-grid" aria-label="ภาพรวมคลังและการจ่ายยา">
+      <article class="panel">
+        <header class="panel-heading"><h2>ยาที่จ่ายมากที่สุด</h2></header>
+        <div class="panel-body">
+          <p class="chart-subtitle" id="dispense-chart-caption"></p>
+          <div id="dispense-chart"></div>
+        </div>
+      </article>
+      <article class="panel">
+        <header class="panel-heading"><h2>เฝ้าระวังล็อตยา</h2></header>
+        <div class="panel-body">
+          <p class="chart-subtitle" id="expiry-caption"></p>
+          <div class="expiry-summary" id="expiry-summary"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel table-panel">
+      <header class="panel-heading">
+        <h2 id="table-title">สต็อกแยกตามล็อต</h2>
+        <span class="badge badge-gray" id="row-count"></span>
+      </header>
+      <nav class="tabs" aria-label="มุมมองข้อมูลคลังยา" role="tablist">
+        <button class="tab" type="button" data-tab="stock" role="tab" aria-selected="true">สต็อก</button>
+        <button class="tab" type="button" data-tab="expiry" role="tab" aria-selected="false">ตรวจวันหมดอายุ</button>
+        <button class="tab" type="button" data-tab="orders" role="tab" aria-selected="false">แนะนำสั่งซื้อ</button>
+        <button class="tab" type="button" data-tab="dispenses" role="tab" aria-selected="false">รายการจ่ายยา</button>
+      </nav>
+      <div id="dispense-stats" class="dispense-stats" hidden></div>
+      <div class="table-tools">
+        <input class="search" id="search" type="search" placeholder="ค้นหาชื่อยา, SKU, เลขล็อต, ผู้จ่ายยา..." aria-label="ค้นหาข้อมูล">
+        <label class="field" id="expiry-filter-wrap" hidden>ช่วงหมดอายุ
+          <select id="expiry-filter">
+            <option value="all">ทุกสถานะ</option>
+            <option value="expired">หมดอายุแล้ว</option>
+            <option value="30">ภายใน 30 วัน</option>
+            <option value="90">ภายใน 90 วัน</option>
+            <option value="180">ภายใน 180 วัน</option>
+          </select>
+        </label>
+        <span class="table-hint" id="table-hint"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead id="table-head"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="table-status" id="table-status" aria-live="polite"></div>
+    </section>
+
+    <p class="notice" id="data-note"></p>
+  </main>
+
+  <script>
+    const numberFormat = new Intl.NumberFormat("th-TH");
+    const dateFormat = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric" });
+    function displayDateTime(value) {
+      const raw = String(value || "");
+      if (!raw) return "ไม่ระบุวันเวลา";
+      const day = raw.slice(0, 10);
+      const time = raw.slice(11, 16);
+      return displayDate(day) + (time ? " " + time : "");
+    }
+    const palette = ["#6075f0", "#34bdbb", "#f0a143", "#e77797", "#8a6de0", "#55af79"];
+    let stockData;
+    let drugData;
+    let dispenseData;
+    let activeTab = "stock";
+    let productBySku;
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function fmt(value) {
+      return numberFormat.format(Number(value) || 0);
+    }
+
+    function parseDate(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return null;
+      const date = new Date(value + "T00:00:00");
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function isoDay(value) {
+      const date = value instanceof Date ? value : parseDate(value);
+      if (!date) return "";
+      return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+    }
+
+    function daysBetween(from, to) {
+      const a = parseDate(isoDay(from));
+      const b = parseDate(isoDay(to));
+      return a && b ? Math.round((b.getTime() - a.getTime()) / 86400000) : null;
+    }
+
+    function displayDate(value) {
+      const date = parseDate(value);
+      return date ? dateFormat.format(date) : "ไม่ระบุ";
+    }
+
+    function getProduct(sku) {
+      return productBySku.get(sku);
+    }
+
+    function productLabel(sku) {
+      const product = getProduct(sku);
+      return product ? product.generic_name : "ไม่พบในบัญชียา";
+    }
+
+    function usableLots() {
+      const referenceDate = stockData.meta.as_of;
+      return stockData.items.filter(item =>
+        item.status === "active" &&
+        Number(item.qty_on_hand) > 0 &&
+        item.expiry >= referenceDate
+      );
+    }
+
+    function getExpiryState(item) {
+      const days = daysBetween(stockData.meta.as_of, item.expiry);
+      if (days === null) return { text: "วันหมดอายุไม่ถูกต้อง", badge: "badge-gray", days: null };
+      if (days < 0) return { text: "หมดอายุแล้ว", badge: "badge-red", days };
+      if (days <= 30) return { text: "หมดอายุใน " + days + " วัน", badge: "badge-red", days };
+      if (days <= 90) return { text: "หมดอายุใน " + days + " วัน", badge: "badge-orange", days };
+      if (days <= 180) return { text: "หมดอายุใน " + days + " วัน", badge: "badge-purple", days };
+      return { text: "ยังไม่ใกล้หมดอายุ", badge: "badge-green", days };
+    }
+
+    function getStockStatus(item) {
+      if (item.status === "written_off") return { text: "ตัดจำหน่าย", badge: "badge-gray" };
+      if (item.status === "quarantine") return { text: "กักกัน", badge: "badge-purple" };
+      if (item.status !== "active") return { text: item.status || "ไม่ระบุ", badge: "badge-gray" };
+      if (item.expiry < stockData.meta.as_of) return { text: "หมดอายุ", badge: "badge-red" };
+      return { text: "พร้อมใช้", badge: "badge-green" };
+    }
+
+    function setKpis() {
+      const lots = usableLots();
+      const totals = new Map();
+      lots.forEach(item => totals.set(item.sku, (totals.get(item.sku) || 0) + Number(item.qty_on_hand)));
+      const stockSkus = new Set(stockData.items.map(item => item.sku));
+      const reorderCount = drugData.items.filter(product =>
+        stockSkus.has(product.sku) && (totals.get(product.sku) || 0) < Number(product.reorder_level || 0)
+      ).length;
+      const activeLots = stockData.items.filter(item => item.status === "active" && Number(item.qty_on_hand) > 0);
+      const expiring90 = activeLots.filter(item => {
+        const day = String(item.expiry || "").slice(0, 10);
+        const asOf = String(stockData.meta.as_of || "").slice(0, 10);
+        const days = daysBetween(asOf, day);
+        return days !== null && days >= 0 && days <= 90;
+      }).length;
+      const quarantined = stockData.items.filter(item => item.status === "quarantine" && Number(item.qty_on_hand) > 0).length;
+      const stockValue = activeLots.filter(item => String(item.expiry || "").slice(0,10) >= stockData.meta.as_of)
+        .reduce((sum, item) => sum + Number(item.qty_on_hand) * Number(item.unit_cost || 0), 0);
+      const skuWithStock = new Set(lots.map(item => item.sku)).size;
+      const cards = [
+        ["SKU ที่มี Stock", fmt(skuWithStock), "จาก " + fmt(drugData.items.length) + " SKU", "kpi-blue"],
+        ["ถึงจุดสั่งซื้อ", fmt(reorderCount), "ยอดใช้ได้ต่ำกว่า reorder_level", "kpi-orange"],
+        ["ใกล้หมดอายุ ≤90 วัน", fmt(expiring90), "ล็อต active ที่ยังมีของ", "kpi-pink"],
+        ["ล็อตกักกัน", fmt(quarantined), "ล็อตที่มีจำนวนคงเหลือ", "kpi-cyan"],
+        ["มูลค่าสต็อก Active", "฿" + stockValue.toLocaleString("th-TH", {minimumFractionDigits:2, maximumFractionDigits:2}), "เฉพาะล็อตที่ยังไม่หมดอายุ", "kpi-green"]
+      ];
+      document.getElementById("kpi-grid").innerHTML = cards.map(card => `
+        <article class="kpi ${card[3]}">
+          <div class="kpi-label">${escapeHtml(card[0])}</div>
+          <div class="kpi-value">${escapeHtml(card[1])}</div>
+          <div class="kpi-detail">${escapeHtml(card[2])}</div>
+        </article>`).join("");
+    }
+
+    function getDateRange() {
+      return {
+        from: document.getElementById("date-from").value,
+        to: document.getElementById("date-to").value
+      };
+    }
+
+    function getFilteredDispenses(range) {
+      return dispenseData.items.filter(item => {
+        const day = String(item.datetime || "").slice(0, 10);
+        return day && (!range.from || day >= range.from) && (!range.to || day <= range.to);
+      });
+    }
+
+    function getSearch() {
+      return document.getElementById("search").value.trim().toLocaleLowerCase();
+    }
+
+    function matchesSearch(values, search) {
+      return !search || values.some(value => String(value == null ? "" : value).toLocaleLowerCase().includes(search));
+    }
+
+    function renderDispenseChart() {
+      const filtered = getFilteredDispenses(getDateRange()).filter(item => item.type === "dispense");
+      const totals = new Map();
+      filtered.forEach(item => totals.set(item.sku, (totals.get(item.sku) || 0) + Number(item.qty || 0)));
+      const rows = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const container = document.getElementById("dispense-chart");
+      const totalQty = filtered.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      document.getElementById("dispense-chart-caption").textContent =
+        "ยอดจ่าย " + fmt(totalQty) + " หน่วย · ไม่นับรายการยกเลิก";
+      if (!rows.length) {
+        container.innerHTML = '<div class="empty">ไม่มีรายการจ่ายยาในช่วงวันที่นี้</div>';
+        return;
+      }
+      const max = rows[0][1] || 1;
+      container.innerHTML = rows.map((row, index) => `
+        <div class="bar-row">
+          <span class="bar-label" title="${escapeHtml(row[0] + " · " + productLabel(row[0]))}">${escapeHtml(row[0])}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(3, row[1] / max * 100)}%;background:${palette[index % palette.length]}"></div></div>
+          <span class="bar-value">${fmt(row[1])}</span>
+        </div>`).join("");
+    }
+
+    function renderExpirySummary() {
+      const activeLots = stockData.items.filter(item => item.status === "active" && Number(item.qty_on_hand) > 0);
+      const expired = activeLots.filter(item => item.expiry < stockData.meta.as_of).length;
+      const within90 = activeLots.filter(item => {
+        const days = daysBetween(stockData.meta.as_of, item.expiry);
+        return days !== null && days >= 0 && days <= 90;
+      }).length;
+      const quarantined = stockData.items.filter(item => item.status === "quarantine" && Number(item.qty_on_hand) > 0).length;
+      document.getElementById("expiry-caption").textContent = "คำนวณเทียบกับวันข้อมูลสต็อก " + displayDate(stockData.meta.as_of);
+      document.getElementById("expiry-summary").innerHTML = `
+        <div class="expiry-chip expired"><strong>${fmt(expired)}</strong><span>ล็อต active หมดอายุ</span></div>
+        <div class="expiry-chip soon"><strong>${fmt(within90)}</strong><span>ล็อต active หมดใน 90 วัน</span></div>
+        <div class="expiry-chip quarantine"><strong>${fmt(quarantined)}</strong><span>ล็อตกักกันมีจำนวนคงเหลือ</span></div>`;
+    }
+
+    function buildOrderRows() {
+      const available = new Map();
+      usableLots().forEach(item => available.set(item.sku, (available.get(item.sku) || 0) + Number(item.qty_on_hand)));
+      return drugData.items.map(product => {
+        const current = available.get(product.sku) || 0;
+        const minimum = Number(product.reorder_level) || 0;
+        return { product, current, minimum, suggested: Math.max(0, minimum - current) };
+      }).filter(row => row.minimum > 0 && row.suggested > 0).sort((a, b) => b.suggested - a.suggested);
+    }
+
+    function setTable(title, headers, rows, hint, emptyMessage) {
+      document.getElementById("table-title").textContent = title;
+      document.getElementById("table-head").innerHTML = "<tr>" + headers.map(header => "<th>" + escapeHtml(header) + "</th>").join("") + "</tr>";
+      document.getElementById("table-body").innerHTML = rows.length ? rows.join("") : `<tr><td class="empty" colspan="${headers.length}">${escapeHtml(emptyMessage)}</td></tr>`;
+      document.getElementById("row-count").textContent = fmt(rows.length) + " รายการ";
+      document.getElementById("table-hint").textContent = hint;
+    }
+
+    function renderStock() {
+      const search = getSearch();
+      const rows = stockData.items.filter(item => matchesSearch([
+        item.sku, item.lot, item.stock_id, productLabel(item.sku), item.status
+      ], search)).map(item => {
+        const product = getProduct(item.sku);
+        const stockState = getStockStatus(item);
+        const expiryState = getExpiryState(item);
+        return `<tr>
+          <td class="primary-cell">${escapeHtml(item.sku)}<span class="secondary">${escapeHtml(product ? product.generic_name : "ไม่พบ SKU ในบัญชียา")}</span></td>
+          <td>${escapeHtml(item.lot || "—")}<span class="secondary">${escapeHtml(item.stock_id || "")}</span></td>
+          <td>${fmt(item.qty_on_hand)} ${escapeHtml(product ? product.unit : "หน่วย")}</td>
+          <td>${displayDate(item.expiry)}<span class="secondary">${escapeHtml(expiryState.text)}</span></td>
+          <td><span class="badge ${stockState.badge}">${escapeHtml(stockState.text)}</span></td>
+          <td>${item.unit_cost == null ? "—" : fmt(item.unit_cost)}</td>
+        </tr>`;
+      });
+      setTable("สต็อกแยกตามล็อต", ["SKU / ชื่อยา", "ล็อต", "คงเหลือ", "วันหมดอายุ", "สถานะ", "ต้นทุน/หน่วย"], rows,
+        "รวมทุกสถานะ รวมล็อตกักกันและตัดจำหน่ายเพื่อให้ตรวจสอบย้อนหลังได้", "ไม่พบล็อตสต็อก");
+      document.getElementById("table-status").textContent = "แสดง " + fmt(rows.length) + " จาก " + fmt(stockData.items.length) + " ล็อต";
+    }
+
+    function renderExpiry() {
+      const search = getSearch();
+      const mode = document.getElementById("expiry-filter").value;
+      const rows = stockData.items.filter(item => Number(item.qty_on_hand) > 0 && item.status !== "written_off").filter(item => {
+        const state = getExpiryState(item);
+        const days = state.days;
+        const passMode = mode === "all" ||
+          (mode === "expired" && days !== null && days < 0) ||
+          (mode !== "expired" && days !== null && days >= 0 && days <= Number(mode));
+        return passMode && matchesSearch([item.sku, item.lot, productLabel(item.sku), item.status], search);
+      }).sort((a, b) => a.expiry.localeCompare(b.expiry)).map(item => {
+        const product = getProduct(item.sku);
+        const expiry = getExpiryState(item);
+        const stock = getStockStatus(item);
+        return `<tr>
+          <td class="primary-cell">${escapeHtml(item.sku)}<span class="secondary">${escapeHtml(product ? product.generic_name : "ไม่พบ SKU ในบัญชียา")}</span></td>
+          <td>${escapeHtml(item.lot || "—")}</td>
+          <td>${fmt(item.qty_on_hand)} ${escapeHtml(product ? product.unit : "หน่วย")}</td>
+          <td>${displayDate(item.expiry)}</td>
+          <td><span class="badge ${expiry.badge}">${escapeHtml(expiry.text)}</span></td>
+          <td><span class="badge ${stock.badge}">${escapeHtml(stock.text)}</span></td>
+        </tr>`;
+      });
+      setTable("รายการติดตามวันหมดอายุ", ["SKU / ชื่อยา", "ล็อต", "คงเหลือ", "วันหมดอายุ", "ความเสี่ยง", "สถานะคลัง"], rows,
+        "แสดงล็อตที่ยังมีจำนวนคงเหลือ และไม่รวมล็อตที่ตัดจำหน่ายแล้ว", "ไม่พบล็อตตามเงื่อนไข");
+      document.getElementById("table-status").textContent = "นับวันจาก snapshot วันที่ " + displayDate(stockData.meta.as_of);
+    }
+
+    function renderOrders() {
+      const search = getSearch();
+      const allRows = buildOrderRows();
+      const rows = allRows.filter(row => matchesSearch([
+        row.product.sku, row.product.generic_name, row.product.category
+      ], search)).map(row => `<tr>
+        <td class="primary-cell">${escapeHtml(row.product.sku)}<span class="secondary">${escapeHtml(row.product.generic_name)} · ${escapeHtml(row.product.strength)}</span></td>
+        <td>${escapeHtml(row.product.category)}</td>
+        <td>${fmt(row.current)} ${escapeHtml(row.product.unit)}</td>
+        <td>${fmt(row.minimum)} ${escapeHtml(row.product.unit)}</td>
+        <td><span class="badge badge-orange">${fmt(row.suggested)} ${escapeHtml(row.product.unit)}</span></td>
+      </tr>`);
+      setTable("ข้อเสนอเติมสต็อก", ["SKU / ชื่อยา", "หมวดหมู่", "พร้อมใช้", "จุดสั่งซื้อ", "ข้อเสนอเติมถึงระดับขั้นต่ำ"], rows,
+        "เรียงตามจำนวนที่ขาด · คำนวณจากล็อต active ที่ไม่หมดอายุ", "ไม่มีรายการต่ำกว่าจุดสั่งซื้อ");
+      document.getElementById("table-status").textContent = "พบ " + fmt(allRows.length) + " SKU ที่พร้อมใช้ต่ำกว่า reorder_level";
+    }
+
+    function renderDispenseStats() {
+      const rows = getFilteredDispenses(getDateRange());
+      const dispenses = rows.filter(item => item.type === "dispense");
+      const voids = rows.filter(item => item.type === "void");
+      const skuCount = new Set(dispenses.map(item => item.sku)).size;
+      const patientCount = new Set(dispenses.map(item => item.patient_code).filter(Boolean)).size;
+      const box = document.getElementById("dispense-stats");
+      box.innerHTML = [
+        ["รายการจ่าย", dispenses.length], ["Void", voids.length],
+        ["SKU ที่จ่าย", skuCount], ["รหัสผู้รับยา", patientCount]
+      ].map(([label, value]) => `<div class="dispense-stat"><span>${escapeHtml(label)}</span><strong>${fmt(value)}</strong></div>`).join("");
+      box.hidden = activeTab !== "dispenses";
+    }
+
+    function renderDispenses() {
+      const range = getDateRange();
+      const allRows = getFilteredDispenses(range).sort((a, b) => String(b.datetime || "").slice(0, 16).localeCompare(String(a.datetime || "").slice(0, 16)));
+      const search = getSearch();
+      const rows = allRows.filter(item => matchesSearch([
+        item.dispense_id, item.sku, item.lot, item.patient_code, item.pharmacist_code, item.type
+      ], search)).map(item => {
+        const product = getProduct(item.sku);
+        const canceled = item.type === "void";
+        const typeLabel = canceled ? "ยกเลิก" : (item.type === "dispense" ? "จ่ายยา" : (item.type === "return" ? "คืนยา" : item.type));
+        return `<tr>
+          <td class="primary-cell">${escapeHtml(item.dispense_id)}<span class="secondary">${escapeHtml(item.datetime ? displayDateTime(item.datetime) : "ไม่ระบุวันเวลา")}</span></td>
+          <td>${escapeHtml(item.sku)}<span class="secondary">${escapeHtml(product ? product.generic_name : "ไม่พบ SKU ในบัญชียา")}</span></td>
+          <td>${escapeHtml(item.lot || "—")}</td>
+          <td>${fmt(item.qty)} ${escapeHtml(product ? product.unit : "หน่วย")}</td>
+          <td>${escapeHtml(item.pharmacist_code || "—")}</td>
+          <td><span class="badge ${canceled ? "badge-gray" : "badge-green"}">${escapeHtml(typeLabel)}</span>${(item.legacy_id || item.ref_dispense_id) ? `<span class="secondary">${escapeHtml(item.legacy_id || item.ref_dispense_id)}</span>` : ""}</td>
+        </tr>`;
+      });
+      setTable("รายการจ่ายยา", ["เลขที่ / วันเวลา", "SKU / ชื่อยา", "ล็อต", "จำนวน", "ผู้จ่าย", "ประเภท"], rows,
+        "แสดงรายการจ่าย, ยกเลิก และคืนยาในช่วงเวลาที่เลือก; KPI รายการจ่ายนับเฉพาะ type = dispense", "ไม่มีรายการในช่วงเวลาที่เลือก");
+      document.getElementById("table-status").textContent =
+        "แสดง " + fmt(rows.length) + " จาก " + fmt(allRows.length) + " รายการในช่วงที่เลือก";
+    }
+
+    function renderActiveTab() {
+      renderDispenseStats();
+      document.querySelectorAll(".tab").forEach(button => {
+        button.setAttribute("aria-selected", String(button.dataset.tab === activeTab));
+      });
+      document.getElementById("expiry-filter-wrap").hidden = activeTab !== "expiry";
+      if (activeTab === "stock") renderStock();
+      if (activeTab === "expiry") renderExpiry();
+      if (activeTab === "orders") renderOrders();
+      if (activeTab === "dispenses") renderDispenses();
+    }
+
+    function renderAll() {
+      setKpis();
+      renderDispenseChart();
+      renderExpirySummary();
+      renderActiveTab();
+      const range = getDateRange();
+      const invalidRange = range.from && range.to && range.from > range.to;
+      document.getElementById("period-label").textContent = invalidRange
+        ? "ช่วงวันที่ไม่ถูกต้อง: วันที่เริ่มต้นต้องไม่อยู่หลังวันที่สิ้นสุด"
+        : "ช่วงที่เลือก: " + (range.from ? displayDate(range.from) : "ไม่จำกัด") + " – " +
+          (range.to ? displayDate(range.to) : "ไม่จำกัด");
+      const unmatchedSkus = new Set(
+        [...stockData.items, ...dispenseData.items]
+          .filter(item => !getProduct(item.sku))
+          .map(item => item.sku)
+      );
+      document.getElementById("data-note").textContent =
+        (dataSource === "supabase" ? "ข้อมูลจาก Supabase" : "ข้อมูลสำรองจากไฟล์ JSON (ไม่ใช่ข้อมูลล่าสุด)") + " · สต็อกอ้างอิง ณ " + displayDate(stockData.meta.as_of) +
+        " · วันหมดอายุคำนวณเทียบกับวันดังกล่าว ไม่ใช่วันที่เปิดหน้าเว็บ · " +
+        "ข้อเสนอซื้อคำนวณจาก reorder_level และยอดพร้อมใช้ ไม่ใช่ใบสั่งซื้อจริง (ไม่มีไฟล์ประวัติการสั่งซื้อ) · " +
+        (unmatchedSkus.size
+          ? "ข้อควรตรวจสอบ: พบ SKU ในสต็อก/รายการจ่ายที่ไม่ตรงกับบัญชียา " + fmt(unmatchedSkus.size) + " รหัส"
+          : "SKU ในสต็อกและรายการจ่ายเชื่อมกับบัญชียาได้");
+    }
+
+    let dataSource = "fallback";
+    async function fetchJsonWithTimeout(url, timeoutMs = 8000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) throw new Error("HTTP " + response.status + " จาก " + url);
+        return await response.json();
+      } finally { clearTimeout(timer); }
+    }
+
+    async function loadData() {
+      let payload;
+      try {
+        // เรียก API ของโปรเจกต์เท่านั้น ไม่เชื่อมต่อ Supabase จากหน้าเว็บโดยตรง
+        payload = await fetchJsonWithTimeout("/api/data", 8000);
+        if (!payload?.drugs?.items || !payload?.stock?.items || !payload?.dispense_log?.items ||
+            !payload?.stock?.meta?.as_of || !Array.isArray(payload.drugs.items) ||
+            !Array.isArray(payload.stock.items) || !Array.isArray(payload.dispense_log.items)) {
+          throw new Error("ข้อมูลจาก /api/data ไม่ครบถ้วน");
+        }
+        dataSource = "supabase";
+      } catch (apiError) {
+        // ทางสำรอง: เมื่อ API ล้มเหลว/หมดเวลา/ข้อมูลไม่ครบ ให้อ่าน JSON เดิมทั้งสามไฟล์
+        const files = ["./data/stock.json", "./data/drugs_update.json", "./data/dispense-log.json"];
+        const fallback = await Promise.all(files.map(file => fetchJsonWithTimeout(file, 8000)));
+        payload = { stock: fallback[0], drugs: fallback[1], dispense_log: fallback[2] };
+        if (!payload.drugs?.items || !payload.stock?.items || !payload.dispense_log?.items) throw apiError;
+        dataSource = "fallback";
+      }
+      stockData = payload.stock;
+      drugData = payload.drugs;
+      dispenseData = payload.dispense_log;
+      productBySku = new Map(drugData.items.map(item => [item.sku, item]));
+      const dates = dispenseData.items.map(item => String(item.datetime || "").slice(0, 10)).filter(day => parseDate(day)).sort();
+      const defaultFrom = (dispenseData.meta?.period || "").split(" ถึง ")[0] || dates[0] || "";
+      const defaultTo = (dispenseData.meta?.period || "").split(" ถึง ")[1] || dates[dates.length - 1] || "";
+      document.getElementById("date-from").value = defaultFrom;
+      document.getElementById("date-to").value = defaultTo;
+      document.getElementById("date-from").addEventListener("change", renderAll);
+      document.getElementById("date-to").addEventListener("change", renderAll);
+      document.getElementById("search").addEventListener("input", renderActiveTab);
+      document.getElementById("expiry-filter").addEventListener("change", renderExpiry);
+      document.querySelectorAll(".tab").forEach(button => button.addEventListener("click", () => {
+        activeTab = button.dataset.tab;
+        renderActiveTab();
+      }));
+      const source = document.getElementById("source-status");
+      source.className = "source-status " + (dataSource === "supabase" ? "live" : "fallback");
+      source.textContent = dataSource === "supabase"
+        ? "ข้อมูลจาก Supabase · as_of " + stockData.meta.as_of
+        : "ข้อมูลสำรองจากไฟล์ (ไม่ใช่ข้อมูลล่าสุด) · as_of " + (stockData.meta?.as_of || "ไม่ระบุ");
+      document.getElementById("snapshot-label").textContent = dataSource === "supabase"
+        ? "ข้อมูลจาก Supabase · " + displayDate(stockData.meta.as_of)
+        : "ข้อมูลสำรองจากไฟล์ JSON · " + displayDate(stockData.meta.as_of);
+      document.getElementById("period-label").textContent = "ข้อมูลจ่ายยาที่มี: " +
+        (dates.length ? displayDate(dates[0]) + " – " + displayDate(dates[dates.length - 1]) : "ไม่มีรายการ");
+      renderAll();
+    }
+
+    loadData().catch(error => {
+      const errorBox = document.getElementById("data-error");
+      errorBox.textContent = error.message + " — ทดสอบผ่านลิงก์ Vercel เท่านั้น (Live Server ไม่รัน /api)";
+      errorBox.className = "error";
+      errorBox.hidden = false;
+      document.getElementById("snapshot-label").textContent = "โหลดข้อมูลไม่สำเร็จ";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>แดชบอร์ดบัญชีรายการยา</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #243746;
+      --muted: #596e7b;
+      --line: #d6e3ea;
+      --bg: #f1f7fa;
+      --card: #ffffff;
+      --primary: #087ba5;
+      --cyan: #079cbd;
+      --orange: #d9653b;
+      --yellow: #a76b00;
+      --green: #27845b;
+      --pink: #c64b70;
+      --control: #ffffff;
+      --table-head: #eaf3f7;
+      --badge-bg: #e6f2f7;
+      --badge-ink: #274b5b;
+      --chart-track: #e9f1f5;
+      --chart-hole: #ffffff;
+      --shadow: rgba(26, 74, 98, .08);
+      --active-shadow: rgba(8, 123, 165, .20);
+      --active-text: #ffffff;
+      --note-bg: #e4f4fb;
+      --note-border: #1683ac;
+      --error-bg: #fff7f5;
+      --error-border: #e7b9b3;
+      --error-ink: #c82014;
+      font-size: 18px;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --navy: #edf5f8;
+      --muted: #b7c8d1;
+      --line: #3a5361;
+      --bg: #17242e;
+      --card: #223541;
+      --primary: #48b5d8;
+      --cyan: #4cc7df;
+      --orange: #ff9a72;
+      --yellow: #f0c05a;
+      --green: #63c58f;
+      --pink: #f08aab;
+      --control: #1c2d38;
+      --table-head: #2a414e;
+      --badge-bg: #304c5b;
+      --badge-ink: #e2f1f7;
+      --chart-track: #354d5a;
+      --chart-hole: #223541;
+      --shadow: rgba(0, 0, 0, .22);
+      --active-shadow: rgba(72, 181, 216, .22);
+      --active-text: #142630;
+      --note-bg: #253f4c;
+      --note-border: #48b5d8;
+      --error-bg: #3b292d;
+      --error-border: #8c5148;
+      --error-ink: #ffd4ce;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 360px;
+      min-height: 100vh;
+      font-family: "Leelawadee UI", "Tahoma", sans-serif;
+      font-size: 18px;
+      color: var(--navy);
+      background: var(--bg);
+      transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    .shell { max-width: 1320px; margin: auto; padding: 24px; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border-radius: 14px;
+      color: #fff;
+      background: linear-gradient(135deg, #087ba5, #6156c8);
+      font-weight: 800;
+      box-shadow: 0 8px 20px var(--active-shadow);
+    }
+
+    h1 { margin: 0; color: var(--primary); font-size: 28px; }
+    .subtitle { margin: 3px 0 0; color: var(--muted); }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: min(560px, 100%);
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: 0 6px 18px var(--shadow);
+    }
+
+    .mode-switch button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 11px;
+      color: var(--muted);
+      background: transparent;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .mode-switch button.active {
+      color: var(--active-text);
+      background: var(--primary);
+      box-shadow: 0 5px 14px var(--active-shadow);
+    }
+
+    .theme-toggle {
+      min-height: 48px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 14px;
+      color: var(--navy);
+      background: var(--card);
+      font: inherit;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .theme-toggle:hover { border-color: var(--primary); }
+    .theme-toggle:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      min-height: 136px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: var(--card);
+      box-shadow: 0 7px 22px var(--shadow);
+    }
+
+    .kpi-card.accent-purple { border-top: 5px solid var(--primary); }
+    .kpi-card.accent-cyan { border-top: 5px solid var(--cyan); }
+    .kpi-card.accent-orange { border-top: 5px solid var(--orange); }
+    .kpi-card.accent-yellow { border-top: 5px solid var(--yellow); }
+    .kpi-card.accent-green { border-top: 5px solid var(--green); }
+
+    .kpi-label { color: var(--muted); font-size: 16px; }
+    .kpi-value { margin-top: 8px; font-size: 36px; line-height: 1; font-weight: 850; }
+    .kpi-detail { margin-top: 9px; color: var(--muted); font-size: 15px; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: 0 7px 22px var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 64px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h2 { margin: 0; color: var(--primary); font-size: 20px; }
+    .panel-body { padding: 18px; }
+
+    .source-status { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; font-weight: 700; }
+    .source-status.live { color:#17643d; background:#e5f6ec; border:1px solid #9bd4b2; }
+    .source-status.fallback { color:#805400; background:#fff4cf; border:1px solid #e6c76c; }
+    .inventory-note {
+      margin: 0 0 16px;
+      border: 1px solid var(--note-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--navy);
+      background: var(--note-bg);
+      font-size: 16px;
+    }
+
+    .inventory-badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: var(--badge-ink);
+      background: var(--badge-bg);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .chart-wrap { min-height: 300px; }
+    #bar-chart, #donut-chart, #tree-chart { width: 100%; min-height: 300px; }
+
+    .table-panel { overflow: hidden; }
+
+    .tools {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 220px 220px;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tools input,
+    .tools select {
+      width: 100%;
+      min-height: 48px;
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: var(--navy);
+      background: var(--control);
+      font: inherit;
+      font-size: 16px;
+    }
+
+    .tools input:focus,
+    .tools select:focus {
+      outline: 3px solid rgba(16,120,159,.18);
+      border-color: var(--primary);
+    }
+
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+    }
+    th { color: var(--muted); background: var(--table-head); font-size: 15px; }
+    td { font-size: 16px; }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: var(--badge-ink);
+      background: var(--badge-bg);
+      font-size: 14px;
+    }
+
+    .status {
+      padding: 12px 18px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 16px;
+    }
+
+    .error-box {
+      border: 1px solid var(--error-border);
+      border-radius: 12px;
+      padding: 16px;
+      color: var(--error-ink);
+      background: var(--error-bg);
+    }
+
+    @media (max-width: 1000px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .shell { padding: 14px; }
+      .topbar { align-items: stretch; flex-direction: column; }
+      .top-actions { align-items: stretch; flex-direction: column; }
+      .mode-switch { width: 100%; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .tools { grid-template-columns: 1fr; }
+      .theme-toggle { align-self: flex-start; }
+      h1 { font-size: 24px; }
+    }
+
+    @media (max-width: 460px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .mode-switch { grid-template-columns: 1fr; }
+      .mode-switch button { min-height: 44px; }
+      .shell { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">ยา</div>
+        <div>
+          <h1>แดชบอร์ดบัญชีรายการยา</h1>
+          <p class="subtitle">สรุปรายการยาและเกณฑ์สั่งซื้อ</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <nav class="mode-switch" aria-label="โหมดการแสดงผล">
+          <button type="button" class="active" data-mode="stock">จัดซื้อและสต็อก</button>
+          <button type="button" data-mode="catalog">หมวดหมู่และแคตตาล็อก</button>
+          <button type="button" data-mode="executive">ภาพรวมผู้บริหาร</button>
+        </nav>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">โหมดมืด</button>
+      </div>
+    </header>
+
+    <div id="source-status" class="source-status" role="status">กำลังตรวจสอบแหล่งข้อมูล...</div>
+    <div id="data-error"></div>
+    <p class="inventory-note">
+      <strong>ทะเบียนยา:</strong> แสดงข้อมูลจากบัญชียา <span id="registry-source-note">กำลังโหลด...</span>
+    </p>
+    <section class="kpi-grid" id="kpi-grid" aria-label="ตัวชี้วัดหลัก"></section>
+
+    <section class="dashboard-grid">
+      <article class="panel">
+        <header class="panel-head">
+          <h2 id="chart-one-title"></h2>
+        </header>
+        <div class="panel-body chart-wrap" id="chart-one"></div>
+      </article>
+
+      <article class="panel">
+        <header class="panel-head">
+          <h2 id="chart-two-title"></h2>
+        </header>
+        <div class="panel-body chart-wrap" id="chart-two"></div>
+      </article>
+    </section>
+
+    <section class="panel table-panel">
+      <header class="panel-head">
+        <h2 id="table-title">รายการยา</h2>
+      </header>
+      <div class="tools">
+        <input id="search" type="search" placeholder="ค้นหารหัส SKU ชื่อยา หรือรหัส ATC">
+        <select id="category-filter" aria-label="กรองตามหมวดหมู่">
+          <option value="">ทุกหมวดหมู่</option>
+        </select>
+        <select id="form-filter" aria-label="กรองตามรูปแบบยา">
+          <option value="">ทุกรูปแบบยา</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>รหัส SKU</th>
+              <th>ชื่อสามัญ</th>
+              <th>ความแรง</th>
+              <th>รูปแบบ</th>
+              <th>หน่วย</th>
+              <th>หมวดหมู่</th>
+              <th>ATC</th>
+              <th>สถานะคลัง</th>
+              <th id="level-head">ระดับสั่งซื้อ</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="status" id="table-status"></div>
+    </section>
+  </main>
+
+  <script>
+    let data = null;
+    let currentMode = "stock";
+
+    const palette = ["#0077a8", "#2855a5", "#167a55", "#b7473d", "#6846a5", "#9a6200", "#197183", "#304b66"];
+
+    function uniqueCount(items, key) {
+      return new Set(items.map(item => item[key])).size;
+    }
+
+    function countBy(items, key) {
+      const counts = {};
+      items.forEach(item => {
+        counts[item[key]] = (counts[item[key]] || 0) + 1;
+      });
+      return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderKpis(configs) {
+      const grid = document.getElementById("kpi-grid");
+      const accents = ["accent-purple", "accent-cyan", "accent-orange", "accent-yellow", "accent-green"];
+      grid.innerHTML = configs.map((item, index) => `
+        <article class="kpi-card ${accents[index]}">
+          <div class="kpi-label">${escapeHtml(item.label)}</div>
+          <div class="kpi-value">${escapeHtml(item.value)}</div>
+          <div class="kpi-detail">${escapeHtml(item.detail)}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderHorizontalBars(containerId, titleId, title, rows, maxRows) {
+      document.getElementById(titleId).textContent = title;
+      const container = document.getElementById(containerId);
+      const selected = rows.slice(0, maxRows);
+      const max = Math.max(...selected.map(row => row[1]), 1);
+
+      container.innerHTML = `
+        <div id="${containerId}-bars" role="img" aria-label="${escapeHtml(title)}">
+          ${selected.map((row, index) => `
+            <div style="display:grid;grid-template-columns:minmax(120px,150px) minmax(80px,1fr) 40px;align-items:center;gap:10px;margin:9px 0">
+              <span style="font-size:15px;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(row[0])}">${escapeHtml(row[0])}</span>
+              <div style="height:18px;border-radius:999px;background:var(--chart-track);overflow:hidden">
+                <div style="width:${row[1] / max * 100}%;height:100%;border-radius:999px;background:${palette[index % palette.length]}"></div>
+              </div>
+              <strong style="text-align:right">${row[1]}</strong>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderDonut(containerId, titleId, title, rows) {
+      document.getElementById(titleId).textContent = title;
+      const container = document.getElementById(containerId);
+      const total = rows.reduce((sum, row) => sum + row[1], 0);
+      let offset = 0;
+
+      const segments = rows.map((row, index) => {
+        const percent = row[1] / total * 100;
+        const segment = `${palette[index % palette.length]} ${offset}% ${offset + percent}%`;
+        offset += percent;
+        return segment;
+      }).join(", ");
+
+      container.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap">
+          <div role="img" aria-label="${escapeHtml(title)}" style="width:230px;height:230px;border-radius:50%;background:conic-gradient(${segments});position:relative">
+            <div style="position:absolute;inset:54px;border-radius:50%;background:var(--chart-hole);display:grid;place-items:center;text-align:center">
+              <div><strong style="display:block;font-size:34px">${total}</strong><span style="color:var(--muted)">รายการ</span></div>
+            </div>
+          </div>
+          <div style="min-width:180px">
+            ${rows.slice(0, 8).map((row, index) => `
+              <div style="display:flex;align-items:center;gap:8px;margin:8px 0;font-size:16px">
+                <span style="width:12px;height:12px;border-radius:3px;background:${palette[index % palette.length]}"></span>
+                <span style="flex:1">${escapeHtml(row[0])}</span>
+                <strong>${row[1]}</strong>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTreemap(containerId, titleId, title, rows) {
+      document.getElementById(titleId).textContent = title;
+      const container = document.getElementById(containerId);
+      const total = rows.reduce((sum, row) => sum + row[1], 0);
+      container.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:75px;gap:8px" role="img" aria-label="${escapeHtml(title)}">
+          ${rows.slice(0, 12).map((row, index) => {
+            const span = row[1] >= total * .12 ? 2 : 1;
+            return `<div style="grid-column:span ${span};border-radius:12px;padding:10px;color:#fff;background:${palette[index % palette.length]};display:flex;flex-direction:column;justify-content:center">
+              <strong>${row[1]}</strong>
+              <span style="font-size:14px;line-height:1.25">${escapeHtml(row[0])}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderTable(items) {
+      const tbody = document.getElementById("table-body");
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td><strong>${escapeHtml(item.sku)}</strong></td>
+          <td>${escapeHtml(item.generic_name)}</td>
+          <td>${escapeHtml(item.strength)}</td>
+          <td>${escapeHtml(item.dosage_form)}</td>
+          <td>${escapeHtml(item.unit)}</td>
+          <td><span class="badge">${escapeHtml(item.category)}</span></td>
+          <td>${escapeHtml(item.atc_code)}</td>
+          <td><span class="inventory-badge">ไม่ระบุยอดคงเหลือ</span></td>
+          <td>${escapeHtml(item.reorder_level)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("table-status").textContent =
+        `แสดง ${items.length.toLocaleString("th-TH")} จาก ${data.items.length.toLocaleString("th-TH")} รายการ`;
+    }
+
+    function applyTableFilters() {
+      if (!data) return;
+      const search = document.getElementById("search").value.trim().toLowerCase();
+      const category = document.getElementById("category-filter").value;
+      const form = document.getElementById("form-filter").value;
+
+      const filtered = data.items.filter(item =>
+        (!search || [item.sku, item.generic_name, item.atc_code]
+          .some(value => String(value == null ? "" : value).toLowerCase().includes(search))) &&
+        (!category || item.category === category) &&
+        (!form || item.dosage_form === form)
+      );
+      renderTable(filtered);
+    }
+
+    function setupFilters() {
+      const categories = [...new Set(data.items.map(item => item.category))].sort();
+      const forms = [...new Set(data.items.map(item => item.dosage_form))].sort();
+
+      const categoryFilter = document.getElementById("category-filter");
+      categoryFilter.innerHTML = '<option value="">ทุกหมวดหมู่</option>' +
+        categories.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+
+      const formFilter = document.getElementById("form-filter");
+      formFilter.innerHTML = '<option value="">ทุกรูปแบบยา</option>' +
+        forms.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+
+      document.getElementById("search").addEventListener("input", applyTableFilters);
+      categoryFilter.addEventListener("change", applyTableFilters);
+      formFilter.addEventListener("change", applyTableFilters);
+    }
+
+    function renderStockMode() {
+      const items = data.items;
+      const categoryRows = countBy(items, "category");
+      const reorderRows = countBy(items, "reorder_level").sort((a, b) => Number(a[0]) - Number(b[0]));
+      const highReorder = items.filter(item => item.reorder_level >= 200).length;
+      const averageReorder = Math.round(items.reduce((sum, item) => sum + item.reorder_level, 0) / items.length);
+
+      renderKpis([
+        { label: "รายการยาทั้งหมด", value: items.length, detail: "SKU ที่ไม่ซ้ำกัน" },
+        { label: "หมวดหมู่", value: uniqueCount(items, "category"), detail: "หมวดหมู่ภาษาไทย" },
+        { label: "จุดสั่งซื้อเฉลี่ย", value: averageReorder, detail: "หน่วยขึ้นกับ SKU" },
+        { label: "ระดับสั่งซื้อ ≥ 200", value: highReorder, detail: "รายการที่จุดสั่งซื้อสูง" },
+        { label: "รหัส ATC ที่ไม่ซ้ำ", value: uniqueCount(items, "atc_code"), detail: "รหัสตาม ATC" }
+      ]);
+
+      renderHorizontalBars("chart-one", "chart-one-title", "จำนวนรายการแบ่งตามหมวดหมู่", categoryRows, 14);
+      renderHorizontalBars("chart-two", "chart-two-title", "การกระจายจุด reorder_level", reorderRows, 12);
+      document.getElementById("table-title").textContent = "รายการยาสำหรับวางแผนจัดซื้อ";
+      document.getElementById("level-head").textContent = "ระดับสั่งซื้อ";
+      applyTableFilters();
+    }
+
+    function renderCatalogMode() {
+      const items = data.items;
+      const categoryRows = countBy(items, "category");
+      const formRows = countBy(items, "dosage_form");
+
+      renderKpis([
+        { label: "รายการยา", value: items.length, detail: "ในบัญชีทั้งหมด" },
+        { label: "หมวดหมู่", value: uniqueCount(items, "category"), detail: "ใช้กรองรายการยา" },
+        { label: "ชื่อสามัญที่ไม่ซ้ำ", value: uniqueCount(items, "generic_name"), detail: "ไม่นับ SKU ซ้ำ" },
+        { label: "รหัส ATC ที่ไม่ซ้ำ", value: uniqueCount(items, "atc_code"), detail: "กลุ่มตาม ATC" },
+        { label: "รูปแบบยา", value: uniqueCount(items, "dosage_form"), detail: "tablet, syrup และอื่น ๆ" }
+      ]);
+
+      renderTreemap("chart-one", "chart-one-title", "Treemap ความหนาแน่นของหมวดหมู่", categoryRows);
+      renderDonut("chart-two", "chart-two-title", "สัดส่วนรูปแบบยา", formRows);
+      document.getElementById("table-title").textContent = "รายการยาและรายละเอียดแคตตาล็อก";
+      document.getElementById("level-head").textContent = "ระดับสั่งซื้อ";
+      applyTableFilters();
+    }
+
+    function renderExecutiveMode() {
+      const items = data.items;
+      const categoryRows = countBy(items, "category");
+      const formRows = countBy(items, "dosage_form");
+      const unitRows = countBy(items, "unit");
+      const averageReorder = Math.round(items.reduce((sum, item) => sum + item.reorder_level, 0) / items.length);
+
+      renderKpis([
+        { label: "รายการยา", value: items.length, detail: "จำนวน SKU ทั้งหมด" },
+        { label: "หมวดหมู่", value: uniqueCount(items, "category"), detail: "ครอบคลุม 14 กลุ่ม" },
+        { label: "ชื่อสามัญที่ไม่ซ้ำ", value: uniqueCount(items, "generic_name"), detail: "รวมยาหลายความแรง" },
+        { label: "รูปแบบยา", value: uniqueCount(items, "dosage_form"), detail: "รูปแบบการบรรจุ" },
+        { label: "จุดสั่งซื้อเฉลี่ย", value: averageReorder, detail: "นโยบาย reorder_level" }
+      ]);
+
+      renderHorizontalBars("chart-one", "chart-one-title", "10 หมวดหมู่ที่มีรายการมากที่สุด", categoryRows, 10);
+      renderDonut("chart-two", "chart-two-title", "สัดส่วนหน่วยบรรจุ", unitRows);
+      document.getElementById("table-title").textContent = "ภาพรวมรายการยา";
+      document.getElementById("level-head").textContent = "ระดับสั่งซื้อ";
+      applyTableFilters();
+    }
+
+    function renderMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll(".mode-switch button").forEach(button => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+
+      if (mode === "stock") renderStockMode();
+      if (mode === "catalog") renderCatalogMode();
+      if (mode === "executive") renderExecutiveMode();
+    }
+
+    document.querySelectorAll(".mode-switch button").forEach(button => {
+      button.addEventListener("click", () => renderMode(button.dataset.mode));
+    });
+
+    const themeToggle = document.getElementById("theme-toggle");
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.documentElement.dataset.theme !== "dark";
+      document.documentElement.dataset.theme = isDark ? "dark" : "light";
+      themeToggle.setAttribute("aria-pressed", String(isDark));
+      themeToggle.textContent = isDark ? "โหมดสว่าง" : "โหมดมืด";
+    });
+
+    async function fetchJsonWithTimeout(url, timeoutMs = 8000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) throw new Error("HTTP " + response.status + " จาก " + url);
+        return await response.json();
+      } finally { clearTimeout(timer); }
+    }
+
+    async function loadRegistry() {
+      let json;
+      let source = "supabase";
+      try {
+        // เรียก /api/data เพื่อรับเฉพาะบัญชียาจาก API ของโปรเจกต์
+        const payload = await fetchJsonWithTimeout("/api/data", 8000);
+        if (!payload?.drugs || !Array.isArray(payload.drugs.items)) throw new Error("ไม่พบ drugs.items จาก /api/data");
+        json = payload.drugs;
+      } catch (apiError) {
+        // ทางสำรองของทะเบียนยา: ใช้ไฟล์ drugs_update.json เมื่อ API ใช้งานไม่ได้
+        json = await fetchJsonWithTimeout("./data/drugs_update.json", 8000);
+        source = "fallback";
+      }
+      if (!json || !Array.isArray(json.items)) throw new Error("ข้อมูลทะเบียนยาต้องมี items เป็น array");
+      data = json;
+      const status = document.getElementById("source-status");
+      status.className = "source-status " + (source === "supabase" ? "live" : "fallback");
+      status.textContent = source === "supabase"
+        ? "ข้อมูลจาก Supabase · as_of " + (json.meta?.as_of || "ไม่ระบุ")
+        : "ข้อมูลสำรองจากไฟล์ (ไม่ใช่ข้อมูลล่าสุด)";
+      document.getElementById("registry-source-note").textContent = source === "supabase"
+        ? "จาก Supabase (100 รายการ)" : "จากไฟล์ JSON (ข้อมูลสำรอง)";
+      setupFilters();
+      renderMode(currentMode);
+    }
+
+    loadRegistry().catch(error => {
+      document.getElementById("data-error").innerHTML =
+        `<div class="error-box">${escapeHtml(error.message)} ทดสอบผ่านลิงก์ Vercel เท่านั้น (Live Server ไม่รัน /api)</div>`;
+      document.getElementById("table-status").textContent = "ยังไม่โหลดข้อมูล";
+    });
+
+  </script>
+</body>
+</html>
